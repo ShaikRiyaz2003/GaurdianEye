@@ -58,7 +58,7 @@ def load_pickle_model(filename):
 
 
 
-def predict_single_image(image_cnn, image_lstm, fashion_model):
+def predict_single_image(image_cnn,image_lstm, fashion_model):
     """
     Predicts the class of a single image using the fashion_model.
 
@@ -71,10 +71,15 @@ def predict_single_image(image_cnn, image_lstm, fashion_model):
     - The predicted class of the image.
     """
     # Reshape the images to add a batch dimension, assuming they don't have it
+    # flat_image_cnn = image_cnn.flatten()
+
+    # Repeat the flattened image_cnn to match the number of samples in image_lstm
+    # repeated_image_cnn = np.repeat(np.expand_dims(flat_image_cnn, axis=0), image_lstm.shape[0], axis=0)
+
+    # Make prediction
     image_cnn_batch = np.expand_dims(image_cnn, axis=0)
     image_lstm_batch = np.expand_dims(image_lstm, axis=0)
 
-    # Make prediction
     predict_prob = fashion_model.predict([image_cnn_batch, image_lstm_batch])
     
     # Convert probabilities to predicted class
@@ -91,7 +96,7 @@ def load_model_with_weights():
 
     print("loading................")
     # Load the model architecture from JSON
-    with open("model_architecture.json", "r") as json_file:
+    with open("./GE Files/model_architecture_FASHION.json", "r") as json_file:
         loaded_model_json = json_file.read()
     loaded_model = model_from_json(loaded_model_json)
     print("architecture loaded ................")
@@ -102,7 +107,7 @@ def load_model_with_weights():
     #                     metrics=['accuracy'])
 
     # Load the weights into the model
-    loaded_model.load_weights("model_weights.h5")
+    loaded_model.load_weights("./GE Files/model_weights_FASHION.h5")
     print("weights loaded ................")
     return loaded_model
 
@@ -110,12 +115,11 @@ def load_model_with_weights():
 
 
 
-# Example usage
-video_path = './videos/fighting.mp4'
+video_path = './videos/Abuse003.mp4'
 frames = extract_and_process_frames(video_path)
-print(f"Extracted {frames.shape[0]} frames, each of shape {frames.shape[1:]}.")
-frame_0 = frames[0].reshape(-1, 1)
-print(frame_0.shape, frames[0].shape)
+# print(f"Extracted {frames.shape[0]} frames, each of shape {frames.shape[1:]}.")
+# frame_0 = frames[0].reshape(-1, 1)
+# print(frame_0.shape, frames[0].shape)
 
 
 # Example usage:
@@ -125,9 +129,40 @@ print(frame_0.shape, frames[0].shape)
 # fashion_model = load_model("./CNN_LSTM.h5")
 
 fashion_model = load_model_with_weights()
+fashion_model.summary()
 
 if(not fashion_model):
     print("Model not loaded")
     exit()
 
-print(predict_single_image(frames[0], frames[0].reshape(-1, 1), fashion_model))
+print(f"Extracted {frames.shape[0]} frames, each of shape {frames.shape[1:]}.")
+frame_0 = frames[0].reshape(-1, 1)
+print(frame_0.shape, frames[0].shape)
+frames_lstm = frames.reshape(frames.shape[0], -1, 1) 
+
+test_prob=fashion_model.predict([frames, frames_lstm])
+y_pred=np.argmax(test_prob,axis=1)
+print(y_pred)
+
+categories_labels = {
+    'Fighting': 6,
+    'Shoplifting': 11,
+    'Abuse': 0,
+    'Arrest': 1,
+    'Shooting': 10,
+    'Robbery': 9,
+    'Explosion': 5,
+    'Arson': 2,
+    'Assault': 3,
+    'Burglary': 4,
+    'Normal': 7,
+    'RoadAccidents': 8,
+    'Stealing': 12,
+    'Vandalism': 13
+}
+
+reverse_categories_labels = {v: k for k, v in categories_labels.items()}
+for i in y_pred:
+    print(reverse_categories_labels[i])
+
+# print(predict_single_image(frames, frames.reshape( -1, 1) , fashion_model))
